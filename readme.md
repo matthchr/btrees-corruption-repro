@@ -1,0 +1,31 @@
+# About
+This repo contains an attempt at a minimal repro of [BTrees issue #118](https://github.com/zopefoundation/BTrees/issues/118). 
+It does manage to consistently reproduce the problem but it takes running for at least few hours to do so. I've found that running it overnight is best. The problem can be reproduced on both Windows and Linux. This problem happens on `BTrees==4.7.2` but also on older versions of BTrees such as `BTrees==4.6.0`.
+
+## What this code does
+This code simulates the same usage pattern that our production component was doing when it first hit this issue. The pattern of usage is continuously adding to the BTree and deleting items based on a fixed retention-period in the tree. Any items older than 30m are deleted and new items are always being added.
+
+## Building
+The bug repros on both Windows and Linux. **It only happens if using the Python version of BTrees** (rather than the native version). For convenience I have created simple build scripts for both Windows and Linux.
+Run `build\build.ps1` on Windows or `build/build.sh` on Linux. This creates a virtual env and installs all dependencies into it. The virtual environment is located at `out/venv`.
+
+## Running
+Once you've created the virtual environment and installed the dependencies, activate it and run: 
+Windows: `set PURE_PYTHON=1 && python repro.py`
+Linux: `PURE_PYTHON=1 && python repro.py`
+
+As mentioned above, it may take a number of hours (6-8 or possibly longer) for the issue to be hit.
+
+## How to tell if you have a repro
+The warn.log file should start spitting out errors that look like the following every minute or so:
+```
+■■20201105T192204.157Z■ERROR■repro■repro.py■monitor_btree_async■365■Unexpected exception checking BTree
+Traceback (most recent call last):
+  File "/home/matthchr/work/temp/btree/btrees-corruption-repro/repro.py", line 362, in monitor_btree_async
+    collection.check_btree()
+  File "/home/matthchr/work/temp/btree/btrees-corruption-repro/repro.py", line 308, in check_btree
+    check_btree(info.history)
+  File "/home/matthchr/work/temp/btree/btrees-corruption-repro/repro.py", line 153, in check_btree
+    bucket._next))
+AssertionError: BTree bucket is empty and has next bucket. Status: saved, estimated size: 64, serial: b'\x03\xdb\xc8\xaa\x04(\xc6\xaa' . prev: BTrees.OOBTree.OOBucket([('c74a91b9-5801-48c7-b380-81107394b017:1', <__main__.BTreeEntry object at 0x7f6df486fe48 oid 0x12fd22 in <Connection at 7f6dfafff940>>), ('c74f3f15-b1af-451d-8543-bdd520a2582c:1', <__main__.BTreeEntry object at 0x7f6df486fba8 oid 0x13dffd in <Connection at 7f6dfafff940>>), ('c752a14a-6715-4258-867b-fb86e2c3552e:1', <__main__.BTreeEntry object at 0x7f6df486f048 oid 0x130219 in <Connection at 7f6dfafff940>>), ('c75a1ffb-b701-4025-bc60-0af59f3ceea4:1', <__main__.BTreeEntry object at 0x7f6df486f518 oid 0x13be87 in <Connection at 7f6dfafff940>>), ('c75a8276-d0aa-48af-b8b9-442fac1c4e4d:1', <__main__.BTreeEntry object at 0x7f6df486f7b8 oid 0x130cbd in <Connection at 7f6dfafff940>>), ('c75ca0b6-0369-479b-99d3-9126ef2579e0:1', <__main__.BTreeEntry object at 0x7f6df486f9e8 oid 0x1346e2 in <Connection at 7f6dfafff940>>), ('c75f1299-23cc-4a94-ae74-714d804cd9c4:1', <__main__.BTreeEntry object at 0x7f6df486f358 oid 0x13ea90 in <Connection at 7f6dfafff940>>), ('c76545fc-15e4-49ec-b53c-b937aa496cfd:1', <__main__.BTreeEntry object at 0x7f6df486f978 oid 0x13ab87 in <Connection at 7f6dfafff940>>), ('c766d63e-019f-48ad-99f7-1eb5102150c0:1', <__main__.BTreeEntry object at 0x7f6df486f588 oid 0x13fe7f in <Connection at 7f6dfafff940>>)]), next: BTrees.OOBTree.OOBucket([('c7a5d15d-a5e4-4f9b-adbc-d015f59df95c:1', <__main__.BTreeEntry object at 0x7f6df486f898 oid 0x12f485 in <Connection at 7f6dfafff940>>), ('c7a63283-4fcf-404a-87a4-d757f2130342:1', <__main__.BTreeEntry object at 0x7f6df486f668 oid 0x12f162 in <Connection at 7f6dfafff940>>), ('c7a674d8-f7ab-4688-95ca-91f227ceab6e:1', <__main__.BTreeEntry object at 0x7f6df486f198 oid 0x131958 in <Connection at 7f6dfafff940>>), ('c7a77259-be55-4b40-8e6e-a0d7e1e5cb1f:1', <__main__.BTreeEntry object at 0x7f6df486f208 oid 0x138bdc in <Connection at 7f6dfafff940>>), ('c7aa1145-8760-498d-b48e-55c846bac04d:1', <__main__.BTreeEntry object at 0x7f6df486fcf8 oid 0x13b176 in <Connection at 7f6dfafff940>>), ('c7aa67a8-a579-45ab-8323-73ff82afb0d5:1', <__main__.BTreeEntry object at 0x7f6df486fc88 oid 0x135f06 in <Connection at 7f6dfafff940>>), ('c7ad07a1-8278-4953-b01a-dbfc1df2af1e:1', <__main__.BTreeEntry object at 0x7f6df486ff28 oid 0x133488 in <Connection at 7f6dfafff940>>), ('c7ad91a1-de6a-4abf-9a01-b570c9c21845:1', <__main__.BTreeEntry object at 0x7f6df486f3c8 oid 0x12e425 in <Connection at 7f6dfafff940>>), ('c7b51ae0-3582-4e4e-a456-96386b5b53da:1', <__main__.BTreeEntry object at 0x7f6df46d0d68 oid 0x13aa43 in <Connection at 7f6dfafff940>>), ('c7b55d26-1347-4adf-9cf0-53663d54d032:1', <__main__.BTreeEntry object at 0x7f6df46d0ac8 oid 0x13c1ba in <Connection at 7f6dfafff940>>), ('c7c530b6-1060-4c72-a9f1-50f9e23587f7:1', <__main__.BTreeEntry object at 0x7f6df46d05f8 oid 0x13e25f in <Connection at 7f6dfafff940>>), ('c7c57693-3fa8-42f2-82a3-d6eaa94ffc9b:1', <__main__.BTreeEntry object at 0x7f6df46d0128 oid 0x13f4e4 in <Connection at 7f6dfafff940>>), ('c7c59152-f1fa-452a-b432-c174225b036e:1', <__main__.BTreeEntry object at 0x7f6df46d0978 oid 0x13b33a in <Connection at 7f6dfafff940>>), ('c7c6da41-4d4c-4498-ae2c-37e44e6f2f26:1', <__main__.BTreeEntry object at 0x7f6df46d00b8 oid 0x13ea8c in <Connection at 7f6dfafff940>>), ('c7cd5e98-a461-4c68-9a71-3dd1b9bf707d:1', <__main__.BTreeEntry object at 0x7f6df46d0208 oid 0x132ecd in <Connection at 7f6dfafff940>>), ('c7d394cc-4357-47e9-8d40-9cc3705a9ffd:1', <__main__.BTreeEntry object at 0x7f6df46d0198 oid 0x1366f5 in <Connection at 7f6dfafff940>>), ('c7d83416-b984-42b7-8419-95f69f37a989:1', <__main__.BTreeEntry object at 0x7f6df46d0828 oid 0x1388f1 in <Connection at 7f6dfafff940>>), ('c7e03b4e-d5df-4598-ad9a-0fc7439cf3a0:1', <__main__.BTreeEntry object at 0x7f6df427aeb8 oid 0x13ce73 in <Connection at 7f6dfafff940>>), ('c7e6238d-57c5-473d-807a-ad148e84985a:1', <__main__.BTreeEntry object at 0x7f6df427aa58 oid 0x13e688 in <Connection at 7f6dfafff940>>)])
+```
